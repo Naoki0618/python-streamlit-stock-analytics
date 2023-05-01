@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             // "program": "${file}",
-            "program": "C:\\Users\\tokyo\\AppData\\Local\\Programs\\Python\\Python38\\Scripts\\streamlit.exe" ,
+            "module": "streamlit",                 // appの代わりにコレ
             "console": "integratedTerminal",
             // "justMyCode": true
             "justMyCode": false,

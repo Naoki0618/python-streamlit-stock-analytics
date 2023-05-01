@@ -116,7 +116,7 @@ if unselected_tickers:
         st.session_state.tickers.remove(unselected_ticker)
 
 select_symbols_df = pd.DataFrame(
-    columns=['証券コード', '社名', '時価総額', '予想PER', 'PER', 'PBR', '配当性向', "is_widget"])
+    columns=['証券コード', '社名', 'マーケット', '時価総額', '予想PER', 'PER', 'PBR', '配当利回', "is_widget"])
 
 
 # 新しい行を作成し、データフレームに追加する
@@ -147,15 +147,24 @@ for sss in options_multiselect:
         stock_data = {
             '証券コード': sss,
             '社名': info.get('longName', 'N/A'),
+            'マーケット': info.get('market', 'N/A'),
             '時価総額': info.get('marketCap', 'N/A'),
             '予想PER': round(info.get('forwardPE', 'N/A'), 2),
             'PER': trailingPE,
             'PBR': priceToBook,
-            '配当性向': dividend_payout_ratio,
+            '配当利回': dividend_payout_ratio,
             "is_widget": True
         }
-        new_row = pd.Series({"証券コード": stock_data['証券コード'], "社名": stock_data['社名'], "時価総額": stock_data['時価総額'], "予想PER": stock_data['予想PER'],
-                            "PER": stock_data['PER'], "PBR": stock_data['PBR'], "配当性向": stock_data['配当性向'], "is_widget": True})
+        new_row = pd.Series({
+            "証券コード": stock_data['証券コード'], 
+            "社名": stock_data['社名'], 
+            "マーケット": stock_data['マーケット'], 
+            "時価総額": stock_data['時価総額'], 
+            "予想PER": stock_data['予想PER'],
+            "PER": stock_data['PER'], 
+            "PBR": stock_data['PBR'], 
+            "配当利回": stock_data['配当利回'], 
+            "is_widget": True})
         select_symbols_df = select_symbols_df.append(
             new_row, ignore_index=True)
     except:
@@ -171,24 +180,28 @@ select_symbols_df = pd.DataFrame.from_records(edited_df_dict)
 try:
 
     st.divider()
-    info_col1, info_col2 = st.columns(2)
-    with info_col1:
-        months = st.slider(':blue[月数]', 1, 100, 2)
-    with info_col2:
-        ymin, ymax = st.slider(':blue[株価範囲]', 0.0, 10000.0, (1000.0, 5000.0))
+    # info_col1, info_col2 = st.columns(2)
+    # with info_col1:
+    months = st.slider(':blue[月数]', 1, 100, 2)
+    # with info_col2:
+        # ymin, ymax = st.slider(':blue[株価範囲]', 0.0, 10000.0, (1000.0, 5000.0))
 
     # 株価のグラフを表示
     tickers = select_symbols_df['証券コード']
+    is_widget = select_symbols_df['is_widget']
+
+    tickers = [tickers[i] for i in range(len(tickers)) if is_widget[i]]
+
     tickers_close_value = fd.get_data(months, tickers, "Close", 0)
     tickers_volume_value = fd.get_data(months, tickers, "Volume", 0)
     
-    value_chart_data_close = tickers_close_value.loc[tickers]
+    tickers_close_value = tickers_close_value.loc[tickers]
     tickers_volume_value = tickers_volume_value.loc[tickers]
 
     # データの整形
-    value_chart_data_close = value_chart_data_close.T.reset_index()
-    value_chart_data_close = pd.melt(value_chart_data_close, id_vars=['Date']).rename(
-        columns={'value': 'Prices(YEN)'}
+    tickers_close_value = tickers_close_value.T.reset_index()
+    tickers_close_value = pd.melt(tickers_close_value, id_vars=['Date']).rename(
+        columns={'value': 'Close'}
     )
     tickers_volume_value = tickers_volume_value.T.reset_index()
     tickers_volume_value = pd.melt(tickers_volume_value, id_vars=['Date']).rename(
@@ -196,28 +209,27 @@ try:
     )
 
     color_scale = alt.Scale(range=["#003f5c", "#bc5090", "#ffa600"])
+    ymin = tickers_close_value['Close'].min()
+    ymax = tickers_close_value['Close'].max()
     chart_close = (
-        alt.Chart(value_chart_data_close)
+        alt.Chart(tickers_close_value)
         .mark_line(opacity=0.8, clip=True)
         .encode(
             x="Date:T",
-            y=alt.Y("Prices(YEN):Q", stack=None,
+            y=alt.Y("Close:Q", stack=None,
                     scale=alt.Scale(domain=[ymin, ymax])),
-            color='Name:N',
+            color=alt.Color('Name:N', scale=alt.Scale(scheme='category10'))
         )
         .configure_axis(
-            gridOpacity=0.2,
+            gridOpacity=0.8,
         )
         .configure_legend(
             titleFontSize=12,
-
             labelFontSize=11,
             symbolType="circle",
             symbolSize=100,
             padding=5,
             cornerRadius=5,
-            strokeColor="gray",
-            strokeWidth=1,
         )
     )
     
@@ -225,26 +237,23 @@ try:
     ymax = tickers_volume_value['Volume'].max()
     chart_volume = (
         alt.Chart(tickers_volume_value)
-        .mark_bar(opacity=0.8, clip=True)
+        .mark_line(opacity=0.8, clip=True)
         .encode(
             x="Date:T",
             y=alt.Y("Volume:Q", stack=None,
                     scale=alt.Scale(domain=[ymin, ymax])),
-            color='Name:N',
+            color=alt.Color('Name:N', scale=alt.Scale(scheme='category10'))
         )
         .configure_axis(
-            gridOpacity=0.2,
+            gridOpacity=0.8,
         )
         .configure_legend(
             titleFontSize=12,
-
             labelFontSize=11,
             symbolType="circle",
             symbolSize=100,
             padding=5,
             cornerRadius=5,
-            strokeColor="gray",
-            strokeWidth=1,
         )
     )
     
@@ -256,7 +265,7 @@ try:
         st.subheader(":blue[Volume Chart]")
         st.altair_chart(chart_volume.interactive(), use_container_width=True)
     
-
+    
     subsets = vm.get_valuation_measures(tickers)
     charts_pbr = []
     charts_per = []
@@ -265,15 +274,16 @@ try:
             x='asOfDate',
             y=alt.Y('PbRatio', scale=alt.Scale(
                 domain=[subset['PbRatio'].min()-0.1, subset['PbRatio'].max()+0.1])),
-            color='symbol:N',  # 列 'symbol' をカラーに設定
-            tooltip=['symbol', 'asOfDate', 'PbRatio']  # ツールチップに表示する列を指定
+            color=alt.Color('symbol:N', scale=alt.Scale(scheme='category10')),
+            tooltip=['symbol', 'asOfDate', 'PbRatio'],  # ツールチップに表示する列を指定
         )
+
         charts_pbr.append(chart_pbr)
         chart_per = alt.Chart(subset).mark_line().encode(
             x='asOfDate',
             y=alt.Y('PeRatio', scale=alt.Scale(
                 domain=[subset['PeRatio'].min()-0.1, subset['PeRatio'].max()+0.1])),
-            color='symbol:N',  # 列 'symbol' をカラーに設定
+            color=alt.Color('symbol:N', scale=alt.Scale(scheme='category10')),  # 列 'symbol' をカラーに設定
             tooltip=['symbol', 'asOfDate', 'PeRatio']  # ツールチップに表示する列を指定
         )
         charts_per.append(chart_per)
