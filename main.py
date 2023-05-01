@@ -62,6 +62,7 @@ if len(ticker) != 0:
         st.sidebar.write(stock.info['sector'])
 
     st.sidebar.divider()
+    
     # 株価情報を表示
     st.sidebar.subheader(':blue[株価情報]')
     info_col1, info_col2, info_col3 = st.sidebar.columns(3)
@@ -179,18 +180,24 @@ try:
     # 株価のグラフを表示
     tickers = select_symbols_df['証券コード']
     tickers_close_value = fd.get_data(months, tickers, "Close", 0)
-    value_chart_data = tickers_close_value.loc[tickers]
-    st.subheader(":blue[Value Chart]")
+    tickers_volume_value = fd.get_data(months, tickers, "Volume", 0)
+    
+    value_chart_data_close = tickers_close_value.loc[tickers]
+    tickers_volume_value = tickers_volume_value.loc[tickers]
 
     # データの整形
-    value_chart_data = value_chart_data.T.reset_index()
-    value_chart_data = pd.melt(value_chart_data, id_vars=['Date']).rename(
+    value_chart_data_close = value_chart_data_close.T.reset_index()
+    value_chart_data_close = pd.melt(value_chart_data_close, id_vars=['Date']).rename(
         columns={'value': 'Prices(YEN)'}
+    )
+    tickers_volume_value = tickers_volume_value.T.reset_index()
+    tickers_volume_value = pd.melt(tickers_volume_value, id_vars=['Date']).rename(
+        columns={'value': 'Volume'}
     )
 
     color_scale = alt.Scale(range=["#003f5c", "#bc5090", "#ffa600"])
-    chart = (
-        alt.Chart(value_chart_data)
+    chart_close = (
+        alt.Chart(value_chart_data_close)
         .mark_line(opacity=0.8, clip=True)
         .encode(
             x="Date:T",
@@ -213,8 +220,42 @@ try:
             strokeWidth=1,
         )
     )
+    
+    ymin = tickers_volume_value['Volume'].min()
+    ymax = tickers_volume_value['Volume'].max()
+    chart_volume = (
+        alt.Chart(tickers_volume_value)
+        .mark_bar(opacity=0.8, clip=True)
+        .encode(
+            x="Date:T",
+            y=alt.Y("Volume:Q", stack=None,
+                    scale=alt.Scale(domain=[ymin, ymax])),
+            color='Name:N',
+        )
+        .configure_axis(
+            gridOpacity=0.2,
+        )
+        .configure_legend(
+            titleFontSize=12,
 
-    st.altair_chart(chart.interactive(), use_container_width=True)
+            labelFontSize=11,
+            symbolType="circle",
+            symbolSize=100,
+            padding=5,
+            cornerRadius=5,
+            strokeColor="gray",
+            strokeWidth=1,
+        )
+    )
+    
+    info_col1, info_col2 = st.columns(2)
+    with info_col1:
+        st.subheader(":blue[Value Chart]")
+        st.altair_chart(chart_close.interactive(), use_container_width=True)
+    with info_col2:
+        st.subheader(":blue[Volume Chart]")
+        st.altair_chart(chart_volume.interactive(), use_container_width=True)
+    
 
     subsets = vm.get_valuation_measures(tickers)
     charts_pbr = []
@@ -249,5 +290,8 @@ try:
     data_income = ff.remove_all_zero_col(data_income)
     st.write("### :blue[配当実績]", data_income.sort_index())
 
-except:
+except Exception as e:
+    print("****************************************************")
+    print(e)
+    print("****************************************************")
     st.stop()
