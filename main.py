@@ -13,6 +13,7 @@ import locale
 from valuation_measures import ValuationMeasures as vm
 from finance_data import FinanceData as fd
 from file_operation import FileOperation as ff
+from favorites import favorite_manager as fm
 
 
 @st.cache_data
@@ -25,7 +26,7 @@ def get_symbols():
 
 
 # ページの幅を1200ピクセルに設定
-st.set_page_config(layout="wide")
+# st.set_page_config(layout="wide")
 
 # ロケールを設定する（日本語を指定）
 locale.setlocale(locale.LC_NUMERIC, 'ja_JP')
@@ -35,56 +36,76 @@ locale.setlocale(locale.LC_NUMERIC, 'ja_JP')
 # 株価リストを取得
 symbols = get_symbols()
 symbols = [""] + symbols
-ticker = st.sidebar.selectbox(
-    'Please select a stock symbol',
-    symbols,
-)
-
-if ticker == "":
-    st.stop()
-
-stock = yf.Ticker(ticker + ".T")
-info = stock.info
-st.sidebar.write(info.get("longName"))
 
 ### Sidebar ###################################################################
-if len(ticker) != 0:
+main, favorite = st.sidebar.tabs(["main", "favorite"])
 
-    st.sidebar.divider()
+with main:
+    # mainタブの処理
+    ticker = st.selectbox(
+        'Please select a stock symbol',
+        symbols,
+    )
 
-    st.sidebar.subheader(':blue[セクター情報]')
-    info_col1, info_col2 = st.sidebar.columns(2)
-    with info_col1:
-        st.sidebar.caption('industry')
-        st.sidebar.write(stock.info['industry'])
-    with info_col2:
-        st.sidebar.caption('sector')
-        st.sidebar.write(stock.info['sector'])
+    if ticker != "":
+        
+        stock = yf.Ticker(ticker + ".T")
+        info = stock.info
+        st.write(info.get("longName"))
+        if len(ticker) != 0:
 
-    st.sidebar.divider()
-    
-    # 株価情報を表示
-    st.sidebar.subheader(':blue[株価情報]')
-    info_col1, info_col2, info_col3 = st.sidebar.columns(3)
-    finish_value = stock.info['regularMarketPreviousClose']
-    open_value = stock.info['regularMarketOpen']
-    high_value = stock.info['dayHigh']
-    low_value = stock.info['dayLow']
-    with info_col1:
-        st.sidebar.metric("始値", open_value, open_value - finish_value)
-    with info_col2:
-        st.sidebar.metric("高値", high_value, high_value - finish_value)
-    with info_col3:
-        st.sidebar.metric("安値", low_value, low_value - finish_value)
+            st.divider()
 
-    try:
-        st.sidebar.write('配当金')
-        st.sidebar.write(stock.info['dividendRate'])
-    except:
-        pass
+            st.subheader(':blue[セクター情報]')
+            info_col1, info_col2 = st.columns(2)
+            with info_col1:
+                st.caption('industry')
+                st.write(stock.info['industry'])
+            with info_col2:
+                st.caption('sector')
+                st.write(stock.info['sector'])
 
-else:
-    st.write('株式コードが無効です。')
+            st.divider()
+            
+            # 株価情報を表示
+            st.subheader(':blue[株価情報]')
+            info_col1, info_col2, info_col3 = st.columns(3)
+            finish_value = stock.info['regularMarketPreviousClose']
+            open_value = stock.info['regularMarketOpen']
+            high_value = stock.info['dayHigh']
+            low_value = stock.info['dayLow']
+            with info_col1:
+                st.metric("始値", open_value, open_value - finish_value)
+            with info_col2:
+                st.metric("高値", high_value, high_value - finish_value)
+            with info_col3:
+                st.metric("安値", low_value, low_value - finish_value)
+
+            try:
+                st.write('配当金')
+                st.write(stock.info['dividendRate'])
+            except:
+                pass
+
+    with favorite:
+        file_path = "C:/Users/tokyo/Documents/GitHub/Streamlit/favorites.csv"
+
+        # 1. CSVファイルからお気に入り情報を読み込む
+        favorites_df = fm.load_favorites(file_path)
+        favorites = fm.parse_favorites(favorites_df)
+
+        # 2. お気に入り情報を編集する
+        favorites = fm.edit_favorites(favorites)
+
+        if favorites != None:
+            # 3. お気に入り情報を更新する
+            fm.update_favorites(favorites, file_path)
+
+        # 4. お気に入りを呼び出す
+        selected_codes = fm.select_favorites(favorites)
+
+        # 5. 結果を表示する
+        st.write("Selected Securities:", selected_codes)
 
 ### Main ######################################################################
 options_multiselect = []
@@ -102,12 +123,20 @@ if ticker not in st.session_state.tickers:
 selected_tickers = st.session_state.tickers.copy()
 if ticker not in selected_tickers:
     selected_tickers.append(ticker)
-options_multiselect = st.multiselect(
-    'Selected stock symbols',
-    symbols,
-    selected_tickers,
-    key='color_multiselect'
-)
+if st.session_state.tickers[0] == '' and len(st.session_state.tickers) == 1:
+    options_multiselect = st.multiselect(
+        'Selected stock symbols',
+        symbols,
+        key='color_multiselect'
+        )
+
+else:
+    options_multiselect = st.multiselect(
+        'Selected stock symbols',
+        symbols,
+        selected_tickers,
+        key='color_multiselect'
+    )
 
 # options_multiselectから選択されなくなったtickerを削除する
 unselected_tickers = set(st.session_state.tickers) - set(options_multiselect)
