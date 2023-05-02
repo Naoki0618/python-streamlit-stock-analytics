@@ -87,25 +87,26 @@ with main:
             except:
                 pass
 
-    with favorite:
-        file_path = "C:/Users/tokyo/Documents/GitHub/Streamlit/favorites.csv"
+with favorite:
+    file_path = "C:/Users/tokyo/Documents/GitHub/Streamlit/favorites.csv"
 
-        # 1. CSVファイルからお気に入り情報を読み込む
-        favorites_df = fm.load_favorites(file_path)
-        favorites = fm.parse_favorites(favorites_df)
+    # 1. CSVファイルからお気に入り情報を読み込む
+    favorites_df = fm.load_favorites(file_path)
+    favorites = fm.parse_favorites(favorites_df)
 
-        # 2. お気に入り情報を編集する
-        favorites = fm.edit_favorites(favorites)
+    # 2. お気に入り情報を編集する
+    favorites = fm.edit_favorites(favorites)
 
-        if favorites != None:
-            # 3. お気に入り情報を更新する
-            fm.update_favorites(favorites, file_path)
+    if favorites != None:
+        # 3. お気に入り情報を更新する
+        fm.update_favorites(favorites, file_path)
 
-        # 4. お気に入りを呼び出す
+    # 4. お気に入りを呼び出す
+    if favorites != None:
         selected_codes = fm.select_favorites(favorites)
 
-        # 5. 結果を表示する
-        st.write("Selected Securities:", selected_codes)
+    # 5. 結果を表示する
+    st.write("Selected Securities:", selected_codes)
 
 ### Main ######################################################################
 options_multiselect = []
@@ -117,6 +118,11 @@ if 'tickers' not in st.session_state:
 
 if ticker not in st.session_state.tickers:
     st.session_state.tickers.append(ticker)
+
+if len(selected_codes) != 0:
+    for code in selected_codes:
+        if not code in st.session_state.tickers:
+            st.session_state.tickers.append(code)
 
 # options_multiselectに含まれるtickerを更新するために、
 # 新しいリストを作成してからoptions_multiselectを更新する
@@ -131,6 +137,7 @@ if st.session_state.tickers[0] == '' and len(st.session_state.tickers) == 1:
         )
 
 else:
+    selected_tickers = [x for x in selected_tickers if x != '']
     options_multiselect = st.multiselect(
         'Selected stock symbols',
         symbols,
