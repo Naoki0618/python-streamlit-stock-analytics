@@ -10,15 +10,16 @@ import numpy as np
 import pandas as pd
 import locale
 
-from valuation_measures import ValuationMeasures as vm
-from finance_data import FinanceData as fd
-from file_operation import FileOperation as ff
-from favorites import favorite_manager as fm
-
+from API.valuation_measures import ValuationMeasures
+from API.finance_data import FinanceData
+from file_operation import FileOperation
+from favorite_manager import FavoriteManager
+from stock_chart import StockAltairChart, StockAltairChartSimple
+from yfinance_manager import YfinanceManager, StockDataFrame
 
 @st.cache_data
 def get_symbols():
-    with open(os.getcwd() + u'/value_list.txt', newline='') as csvfile:
+    with open(os.getcwd() + u'/Data/value_list.txt', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='"')
         symbols = [row[0] for row in reader]
 
@@ -26,7 +27,7 @@ def get_symbols():
 
 
 # ページの幅を1200ピクセルに設定
-# st.set_page_config(layout="wide")
+st.set_page_config(layout="wide")
 
 # ロケールを設定する（日本語を指定）
 locale.setlocale(locale.LC_NUMERIC, 'ja_JP')
@@ -48,62 +49,27 @@ with main:
     )
 
     if ticker != "":
-        
-        stock = yf.Ticker(ticker + ".T")
-        info = stock.info
-        st.write(info.get("longName"))
-        if len(ticker) != 0:
 
-            st.divider()
-
-            st.subheader(':blue[セクター情報]')
-            info_col1, info_col2 = st.columns(2)
-            with info_col1:
-                st.caption('industry')
-                st.write(stock.info['industry'])
-            with info_col2:
-                st.caption('sector')
-                st.write(stock.info['sector'])
-
-            st.divider()
-            
-            # 株価情報を表示
-            st.subheader(':blue[株価情報]')
-            info_col1, info_col2, info_col3 = st.columns(3)
-            finish_value = stock.info['regularMarketPreviousClose']
-            open_value = stock.info['regularMarketOpen']
-            high_value = stock.info['dayHigh']
-            low_value = stock.info['dayLow']
-            with info_col1:
-                st.metric("始値", open_value, open_value - finish_value)
-            with info_col2:
-                st.metric("高値", high_value, high_value - finish_value)
-            with info_col3:
-                st.metric("安値", low_value, low_value - finish_value)
-
-            try:
-                st.write('配当金')
-                st.write(stock.info['dividendRate'])
-            except:
-                pass
+        cticker = YfinanceManager(ticker)
+        cticker.display_info()
 
 with favorite:
-    file_path = "C:/Users/tokyo/Documents/GitHub/Streamlit/favorites.csv"
+    file_path = os.getcwd() + "/Data/favorites.csv"
 
     # 1. CSVファイルからお気に入り情報を読み込む
-    favorites_df = fm.load_favorites(file_path)
-    favorites = fm.parse_favorites(favorites_df)
+    favorites_df = FavoriteManager.load_favorites(file_path)
+    favorites = FavoriteManager.parse_favorites(favorites_df)
 
     # 2. お気に入り情報を編集する
-    favorites = fm.edit_favorites(favorites)
+    favorites = FavoriteManager.edit_favorites(favorites)
 
     if favorites != None:
         # 3. お気に入り情報を更新する
-        fm.update_favorites(favorites, file_path)
+        FavoriteManager.update_favorites(favorites, file_path)
 
     # 4. お気に入りを呼び出す
     if favorites != None:
-        selected_codes = fm.select_favorites(favorites)
+        selected_codes = FavoriteManager.select_favorites(favorites)
 
     # 5. 結果を表示する
     st.write("Selected Securities:", selected_codes)
@@ -151,67 +117,16 @@ if unselected_tickers:
     for unselected_ticker in unselected_tickers:
         st.session_state.tickers.remove(unselected_ticker)
 
-select_symbols_df = pd.DataFrame(
-    columns=['証券コード', '社名', 'マーケット', '時価総額', '予想PER', 'PER', 'PBR', '配当利回', "is_widget"])
-
+Cstock_df = StockDataFrame()
 
 # 新しい行を作成し、データフレームに追加する
 for sss in options_multiselect:
     try:
-        stock = yf.Ticker(sss + ".T")
-        info = stock.info
-
-        try:
-            trailingPE = round(info.get('trailingPE', 'N/A'), 2)
-        except:
-            trailingPE = 'N/A'
-        try:
-            priceToBook = round(info.get('priceToBook', 'N/A'), 2)
-        except:
-            priceToBook = 'N/A'
-        try:
-            trailing_annual_dividend_yield = info.get(
-                'trailingAnnualDividendYield')
-            if trailing_annual_dividend_yield is not None:
-                dividend_payout_ratio = round(
-                    trailing_annual_dividend_yield * 100, 2)
-            else:
-                dividend_payout_ratio = 'N/A'
-        except:
-            dividend_payout_ratio = 'N/A'
-
-        stock_data = {
-            '証券コード': sss,
-            '社名': info.get('longName', 'N/A'),
-            'マーケット': info.get('market', 'N/A'),
-            '時価総額': info.get('marketCap', 'N/A'),
-            '予想PER': round(info.get('forwardPE', 'N/A'), 2),
-            'PER': trailingPE,
-            'PBR': priceToBook,
-            '配当利回': dividend_payout_ratio,
-            "is_widget": True
-        }
-        new_row = pd.Series({
-            "証券コード": stock_data['証券コード'], 
-            "社名": stock_data['社名'], 
-            "マーケット": stock_data['マーケット'], 
-            "時価総額": stock_data['時価総額'], 
-            "予想PER": stock_data['予想PER'],
-            "PER": stock_data['PER'], 
-            "PBR": stock_data['PBR'], 
-            "配当利回": stock_data['配当利回'], 
-            "is_widget": True})
-        select_symbols_df = select_symbols_df.append(
-            new_row, ignore_index=True)
+        Cstock_df.add_data(sss)
     except:
         st.error(sss + 'は何かしらの情報を取得できません', icon="🚨")
 
-edited_df = st.experimental_data_editor(select_symbols_df)
-
-# データエディターで編集された値を取得する
-edited_df_dict = edited_df.to_dict(orient='records')
-# 編集後の値を select_symbols_df に反映する
-select_symbols_df = pd.DataFrame.from_records(edited_df_dict)
+Cstock_df.display_dataframe()
 
 try:
 
@@ -222,14 +137,17 @@ try:
     # with info_col2:
         # ymin, ymax = st.slider(':blue[株価範囲]', 0.0, 10000.0, (1000.0, 5000.0))
 
-    # 株価のグラフを表示
-    tickers = select_symbols_df['証券コード']
-    is_widget = select_symbols_df['is_widget']
+    # 株価のグラフを表示　##################################
+    tickers = Cstock_df.get_info('証券コード')
+    is_widget = Cstock_df.get_info('is_widget')
 
+    #　チェックボックスがONのものだけを抽出
     tickers = [tickers[i] for i in range(len(tickers)) if is_widget[i]]
 
-    tickers_close_value = fd.get_data(months, tickers, "Close", 0)
-    tickers_volume_value = fd.get_data(months, tickers, "Volume", 0)
+    # 初期データ
+    Ctickers_data = FinanceData(tickers)
+    tickers_close_value = Ctickers_data.get_data(months, "Close", 0)
+    tickers_volume_value = Ctickers_data.get_data(months, "Volume", 0)
     
     tickers_close_value = tickers_close_value.loc[tickers]
     tickers_volume_value = tickers_volume_value.loc[tickers]
@@ -237,103 +155,46 @@ try:
     # データの整形
     tickers_close_value = tickers_close_value.T.reset_index()
     tickers_close_value = pd.melt(tickers_close_value, id_vars=['Date']).rename(
-        columns={'value': 'Close'}
+        columns={'value': 'Close', 'variable': 'Name'}
     )
     tickers_volume_value = tickers_volume_value.T.reset_index()
     tickers_volume_value = pd.melt(tickers_volume_value, id_vars=['Date']).rename(
-        columns={'value': 'Volume'}
+        columns={'value': 'Volume', 'variable': 'Name'}
     )
 
     color_scale = alt.Scale(range=["#003f5c", "#bc5090", "#ffa600"])
-    ymin = tickers_close_value['Close'].min()
-    ymax = tickers_close_value['Close'].max()
-    chart_close = (
-        alt.Chart(tickers_close_value)
-        .mark_line(opacity=0.8, clip=True)
-        .encode(
-            x="Date:T",
-            y=alt.Y("Close:Q", stack=None,
-                    scale=alt.Scale(domain=[ymin, ymax])),
-            color=alt.Color('Name:N', scale=alt.Scale(scheme='category10'))
-        )
-        .configure_axis(
-            gridOpacity=0.8,
-        )
-        .configure_legend(
-            titleFontSize=12,
-            labelFontSize=11,
-            symbolType="circle",
-            symbolSize=100,
-            padding=5,
-            cornerRadius=5,
-        )
-    )
-    
-    ymin = tickers_volume_value['Volume'].min()
-    ymax = tickers_volume_value['Volume'].max()
-    chart_volume = (
-        alt.Chart(tickers_volume_value)
-        .mark_line(opacity=0.8, clip=True)
-        .encode(
-            x="Date:T",
-            y=alt.Y("Volume:Q", stack=None,
-                    scale=alt.Scale(domain=[ymin, ymax])),
-            color=alt.Color('Name:N', scale=alt.Scale(scheme='category10'))
-        )
-        .configure_axis(
-            gridOpacity=0.8,
-        )
-        .configure_legend(
-            titleFontSize=12,
-            labelFontSize=11,
-            symbolType="circle",
-            symbolSize=100,
-            padding=5,
-            cornerRadius=5,
-        )
-    )
-    
+
+    chart_close = StockAltairChart(data=tickers_close_value, x="Date", y="Close", color="Name", title="Value Chart")
+    chart_volume = StockAltairChart(data=tickers_volume_value, x="Date", y="Volume", color="Name", title="Volume Chart")
+
     info_col1, info_col2 = st.columns(2)
     with info_col1:
         st.subheader(":blue[Value Chart]")
-        st.altair_chart(chart_close.interactive(), use_container_width=True)
+        chart_close.display_chart()
     with info_col2:
         st.subheader(":blue[Volume Chart]")
-        st.altair_chart(chart_volume.interactive(), use_container_width=True)
+        chart_volume.display_chart()
     
     
-    subsets = vm.get_valuation_measures(tickers)
-    charts_pbr = []
-    charts_per = []
-    for subset in subsets:
-        chart_pbr = alt.Chart(subset).mark_line().encode(
-            x='asOfDate',
-            y=alt.Y('PbRatio', scale=alt.Scale(
-                domain=[subset['PbRatio'].min()-0.1, subset['PbRatio'].max()+0.1])),
-            color=alt.Color('symbol:N', scale=alt.Scale(scheme='category10')),
-            tooltip=['symbol', 'asOfDate', 'PbRatio'],  # ツールチップに表示する列を指定
-        )
+    subsets = ValuationMeasures.get_valuation_measures(tickers)
 
-        charts_pbr.append(chart_pbr)
-        chart_per = alt.Chart(subset).mark_line().encode(
-            x='asOfDate',
-            y=alt.Y('PeRatio', scale=alt.Scale(
-                domain=[subset['PeRatio'].min()-0.1, subset['PeRatio'].max()+0.1])),
-            color=alt.Color('symbol:N', scale=alt.Scale(scheme='category10')),  # 列 'symbol' をカラーに設定
-            tooltip=['symbol', 'asOfDate', 'PeRatio']  # ツールチップに表示する列を指定
-        )
-        charts_per.append(chart_per)
+    charts_pbr = StockAltairChartSimple()
+    charts_per = StockAltairChartSimple()
+    
+    for subset in subsets:
+        charts_pbr.add_chart(subset, "PbRatio")
+        charts_per.add_chart(subset, "PeRatio")
+
     info_col1, info_col2 = st.columns(2)
     with info_col1:
         st.subheader(":blue[PBR]")
-        st.altair_chart(alt.layer(*charts_pbr), use_container_width=True)
+        charts_pbr.display_chart()
     with info_col2:
         st.subheader(":blue[PER]")
-        st.altair_chart(alt.layer(*charts_per), use_container_width=True)
+        charts_per.display_chart()
 
-    df_income = fd.get_data(months, tickers, "Dividends", 1)
-    data_income = df_income.loc[tickers]
-    data_income = ff.remove_all_zero_col(data_income)
+    data_income = Ctickers_data.get_data(months, "Dividends", 1)
+    data_income = Ctickers_data.remove_all_zero_col(data_income)
     st.write("### :blue[配当実績]", data_income.sort_index())
 
 except Exception as e:

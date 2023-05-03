@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-class favorite_manager():
+class FavoriteManager():
     # 1. CSVファイルからお気に入り情報を読み込む
     @classmethod
     def load_favorites(self, file_path):
