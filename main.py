@@ -10,12 +10,14 @@ import numpy as np
 import pandas as pd
 import locale
 
-from API.valuation_measures import ValuationMeasures
+from API.yahoo_query import YahooQuery
 from API.finance_data import FinanceData
-from file_operation import FileOperation
-from favorite_manager import FavoriteManager
-from stock_chart import StockAltairChart, StockAltairChartSimple
-from yfinance_manager import YfinanceManager, StockDataFrame
+from Manager.favorite_manager import FavoriteManager
+from Manager.yfinance_manager import YfinanceManager
+from Widget.stock_chart import StockAltairChart, StockAltairChartSimple
+from Widget.stock_data_frame import StockDataFrame
+
+
 
 @st.cache_data
 def get_symbols():
@@ -123,7 +125,8 @@ Cstock_df = StockDataFrame()
 for sss in options_multiselect:
     try:
         Cstock_df.add_data(sss)
-    except:
+    except Exception as e:
+        print(e)
         st.error(sss + 'は何かしらの情報を取得できません', icon="🚨")
 
 Cstock_df.display_dataframe()
@@ -175,15 +178,30 @@ try:
         st.subheader(":blue[Volume Chart]")
         chart_volume.display_chart()
     
-    
-    subsets = ValuationMeasures.get_valuation_measures(tickers)
+    CyahooQuery = YahooQuery(tickers)
+    subsets_vm = CyahooQuery.get_valuation_measures()
+    subsets_is = CyahooQuery.get_income_statement()
 
     charts_pbr = StockAltairChartSimple()
     charts_per = StockAltairChartSimple()
+    charts_revenue = StockAltairChartSimple()
+    charts_income = StockAltairChartSimple()
     
-    for subset in subsets:
-        charts_pbr.add_chart(subset, "PbRatio")
-        charts_per.add_chart(subset, "PeRatio")
+    for subset in subsets_vm:
+        try:
+            charts_pbr.add_chart(subset, "PbRatio")
+        except:
+            pass
+        try:
+            charts_per.add_chart(subset, "PeRatio")
+        except:
+            pass
+    for subset in subsets_is:
+        charts_revenue.add_bar_chart(subset, "TotalRevenue")
+        try:
+            charts_income.add_bar_chart(subset, "TotalOperatingIncomeAsReported")
+        except:
+            pass
 
     info_col1, info_col2 = st.columns(2)
     with info_col1:
@@ -191,7 +209,18 @@ try:
         charts_pbr.display_chart()
     with info_col2:
         st.subheader(":blue[PER]")
-        charts_per.display_chart()
+        try:
+            charts_per.display_chart()
+        except:
+            pass    
+    
+    info_col1, info_col2 = st.columns(2)
+    with info_col1:
+        st.subheader(":blue[売上高]")
+        charts_revenue.display_chart()
+    with info_col2:
+        st.subheader(":blue[営業利益]")
+        charts_income.display_chart()
 
     data_income = Ctickers_data.get_data(months, "Dividends", 1)
     data_income = Ctickers_data.remove_all_zero_col(data_income)

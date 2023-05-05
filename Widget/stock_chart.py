@@ -50,15 +50,45 @@ class StockAltairChartSimple:
         self.charts = []
 
     def add_chart(self, subset, stock_symbol):
-        chart = alt.Chart(subset).mark_line().encode(
+        chart = alt.Chart(subset).mark_line(size=2, text="⬇", dx=0, dy=-10, align="center").encode(
             x='asOfDate',
             y=alt.Y(stock_symbol, scale=alt.Scale(
                 domain=[subset[stock_symbol].min()-0.1, subset[stock_symbol].max()+0.1])),
             color=alt.Color('symbol:N', scale=alt.Scale(scheme='category10')),
-            tooltip=['symbol', 'asOfDate', stock_symbol],  # ツールチップに表示する列を指定
+        ).interactive()
+        annotation_layer = (
+            alt.Chart(subset)
+            .mark_text(size=10, text="●", dx=0, dy=1, align="center")
+            .encode(
+                x='asOfDate',
+                y=alt.Y(stock_symbol, scale=alt.Scale(
+                    domain=[subset[stock_symbol].min() * 0.9, subset[stock_symbol].max()*1.1])),
+                tooltip=['symbol', 'asOfDate', stock_symbol],  # ツールチップに表示する列を指定
+            )
+            .interactive()
         )
+        self.charts.append(chart+annotation_layer)
 
-        self.charts.append(chart)
+    def add_bar_chart(self, subset, stock_symbol):
+        
+        chart = alt.Chart(subset).mark_line().encode(
+            x='asOfDate',
+            y=alt.Y(stock_symbol, scale=alt.Scale(
+            domain=[subset[stock_symbol].min() * 0.9, subset[stock_symbol].max()*1.1])),
+            color=alt.Color('symbol:N', scale=alt.Scale(scheme='category10')),
+        ).interactive()
+        annotation_layer = (
+            alt.Chart(subset)
+            .mark_text(size=10, text="●", dx=0, dy=1, align="center")
+            .encode(
+                x='asOfDate',
+                y=alt.Y(stock_symbol, scale=alt.Scale(
+                domain=[subset[stock_symbol].min() * 0.9, subset[stock_symbol].max()*1.1])),
+                tooltip=['symbol', 'asOfDate', stock_symbol],  # ツールチップに表示する列を指定
+            )
+            .interactive()
+        )
+        self.charts.append(chart+annotation_layer)
 
     def display_chart(self):
         st.altair_chart(alt.layer(*self.charts), use_container_width=True)

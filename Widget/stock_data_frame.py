@@ -1,70 +1,32 @@
 import yfinance as yf
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
-
-class YfinanceManager:
-
-    # 銘柄情報を取得
-    def __init__(self, ticker):
-        self.ticker = ticker
-        stock = yf.Ticker(ticker + ".T")
-        self.info = stock.info
-
-    # 銘柄のセクター、価格等を表示
-    def display_info(self):
-
-        st.write(self.info.get("longName"))
-
-        st.divider()
-
-        st.subheader(':blue[セクター情報]')
-        info_col1, info_col2 = st.columns(2)
-        with info_col1:
-            st.caption('industry')
-            st.write(self.info['industry'])
-        with info_col2:
-            st.caption('sector')
-            st.write(self.info['sector'])
-
-        st.divider()
-
-        # 株価情報を表示
-        st.subheader(':blue[株価情報]')
-        info_col1, info_col2, info_col3 = st.columns(3)
-        finish_value = self.info['regularMarketPreviousClose']
-        open_value = self.info['regularMarketOpen']
-        high_value = self.info['dayHigh']
-        low_value = self.info['dayLow']
-        with info_col1:
-            st.metric("始値", open_value, open_value - finish_value)
-        with info_col2:
-            st.metric("高値", high_value, high_value - finish_value)
-        with info_col3:
-            st.metric("安値", low_value, low_value - finish_value)
-
-        try:
-            st.write('配当金')
-            st.write(self.info['dividendRate'])
-        except:
-            pass
 
 # 株式情報からデータフレームを作成する
-
-
 class StockDataFrame:
 
-    # 　ヘッダーのみ作成
+    # ヘッダーのみ作成
     def __init__(self):
 
         self.df = pd.DataFrame(
-            columns=['証券コード', '社名', 'マーケット', '時価総額', '予想PER', 'PER', 'PBR', '配当利回', "is_widget"])
+            columns=['証券コード', '社名', '時価総額', '現在株価', '目標株価', 'PER', 'PBR', '配当利回', '資本比率', 'MS評価', 'is_widget']
+            )
 
-    # 　要素追加
+        self.chart_df = []
+
     def add_data(self, sss):
 
-        stock = yf.Ticker(sss + ".T")
+        if sss.isalpha():
+            stock = yf.Ticker(sss)
+        else:
+            stock = yf.Ticker(sss + ".T")
+
         info = stock.info
+        try:
+            marketCap = round(info.get('marketCap', 'N/A') / 1000000, 0)
+        except:
+            marketCap = 'N/A'
         try:
             trailingPE = round(info.get('trailingPE', 'N/A'), 2)
         except:
@@ -91,28 +53,32 @@ class StockDataFrame:
         stock_data = {
             '証券コード': sss,
             '社名': info.get('longName', 'N/A'),
-            'マーケット': info.get('market', 'N/A'),
-            '時価総額': info.get('marketCap', 'N/A'),
-            '予想PER': forwardPE,
+            '時価総額': marketCap,
+            '現在株価': info.get('currentPrice', 'N/A'),
+            '目標株価': info.get('targetMeanPrice', 'N/A'),
             'PER': trailingPE,
             'PBR': priceToBook,
             '配当利回': dividend_payout_ratio,
-            "is_widget": True
+            '資本比率': info.get('debtToEquity', 'N/A'),
+            'MS評価': info.get('industry', 'N/A'),
+            'is_widget': True
         }
         new_row = pd.Series({
             "証券コード": stock_data['証券コード'],
             "社名": stock_data['社名'],
-            "マーケット": stock_data['マーケット'],
             "時価総額": stock_data['時価総額'],
-            "予想PER": stock_data['予想PER'],
+            "現在株価": stock_data['現在株価'],
+            "目標株価": stock_data['目標株価'],
             "PER": stock_data['PER'],
             "PBR": stock_data['PBR'],
             "配当利回": stock_data['配当利回'],
-            "is_widget": True})
+            "資本比率": stock_data['資本比率'],
+            "MS評価": stock_data['MS評価'],
+            'is_widget': True})
         self.df = self.df.append(
             new_row, ignore_index=True)
 
-    # 　インスタンス情報をもとにデータフレームを表示
+    # インスタンス情報をもとにデータフレームを表示
     def display_dataframe(self):
 
         edited_df = st.experimental_data_editor(self.df)

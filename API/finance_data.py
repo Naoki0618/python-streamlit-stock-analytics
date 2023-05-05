@@ -6,14 +6,27 @@ class FinanceData:
 
     def __init__(self, tickers):
         self.tickers = tickers
+        self.tickers_info = []
+        for company in self.tickers:
+
+            if company.isalpha():
+                tkr = yf.Ticker(company)
+            else:
+                tkr = yf.Ticker(company + ".T")
+            self.tickers_info.append(tkr)
 
     def get_data(self, months, column, flg):
         df = pd.DataFrame()
-        for company in self.tickers:
-            tkr = yf.Ticker(company + ".T")
+        for tkr in self.tickers_info:
+
+            # if company.isalpha():
+            #     tkr = yf.Ticker(company)
+            # else:
+            #     tkr = yf.Ticker(company + ".T")
+
             hist = tkr.history(period=f'{months}mo')
             hist = hist[[column]]
-            hist.columns = [company]
+            hist.columns = [tkr.ticker]
             hist = hist.T
             hist.index.name = 'Name'
             hist['Company'] = tkr.info['longName']  # 企業名をカラムに追加する
