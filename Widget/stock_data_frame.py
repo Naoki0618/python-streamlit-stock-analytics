@@ -10,7 +10,7 @@ class StockDataFrame:
     def __init__(self):
 
         self.df = pd.DataFrame(
-            columns=['証券コード', '社名', '時価総額', '現在株価', '目標株価', 'PER', 'PBR', '配当利回', '資本比率', 'MS評価', 'is_widget']
+            columns=['証券コード', '社名', '時価総額', '現在株価', '目標株価', 'PER', 'PBR', '配当利回', '資本比率', '信用倍率', 'is_widget']
             )
 
         self.chart_df = []
@@ -50,6 +50,11 @@ class StockDataFrame:
         except:
             dividend_payout_ratio = 'N/A'
 
+        try:    
+            credit_ratio = round(info.get("forwardPE") / info.get("trailingPE") ,2)
+        except:
+            credit_ratio = 'N/A'
+
         stock_data = {
             '証券コード': sss,
             '社名': info.get('longName', 'N/A'),
@@ -60,7 +65,7 @@ class StockDataFrame:
             'PBR': priceToBook,
             '配当利回': dividend_payout_ratio,
             '資本比率': info.get('debtToEquity', 'N/A'),
-            'MS評価': info.get('industry', 'N/A'),
+            '信用倍率': credit_ratio,
             'is_widget': True
         }
         new_row = pd.Series({
@@ -73,7 +78,7 @@ class StockDataFrame:
             "PBR": stock_data['PBR'],
             "配当利回": stock_data['配当利回'],
             "資本比率": stock_data['資本比率'],
-            "MS評価": stock_data['MS評価'],
+            "信用倍率": stock_data['信用倍率'],
             'is_widget': True})
         self.df = self.df.append(
             new_row, ignore_index=True)

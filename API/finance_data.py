@@ -26,7 +26,7 @@ class FinanceData:
 
             hist = tkr.history(period=f'{months}mo')
             hist = hist[[column]]
-            hist.columns = [tkr.ticker]
+            hist.columns = [tkr.ticker.replace(".T","")]
             hist = hist.T
             hist.index.name = 'Name'
             hist['Company'] = tkr.info['longName']  # 企業名をカラムに追加する

@@ -196,10 +196,10 @@ try:
             charts_per.add_chart(subset, "PeRatio")
         except:
             pass
-    for subset in subsets_is:
-        charts_revenue.add_bar_chart(subset, "TotalRevenue")
+    for cnt, subset in enumerate(subsets_is):
+        charts_revenue.add_chart(subset, "TotalRevenue")
         try:
-            charts_income.add_bar_chart(subset, "TotalOperatingIncomeAsReported")
+            charts_income.add_chart(subset, "TotalOperatingIncomeAsReported")
         except:
             pass
 

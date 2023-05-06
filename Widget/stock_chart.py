@@ -69,26 +69,27 @@ class StockAltairChartSimple:
         )
         self.charts.append(chart+annotation_layer)
 
-    def add_bar_chart(self, subset, stock_symbol):
+    def add_bar_chart(self, subset, stock_symbol, cnt):
         
-        chart = alt.Chart(subset).mark_line().encode(
+        chart = alt.Chart(subset).mark_bar(dx=5*cnt).encode(
             x='asOfDate',
             y=alt.Y(stock_symbol, scale=alt.Scale(
             domain=[subset[stock_symbol].min() * 0.9, subset[stock_symbol].max()*1.1])),
             color=alt.Color('symbol:N', scale=alt.Scale(scheme='category10')),
         ).interactive()
-        annotation_layer = (
-            alt.Chart(subset)
-            .mark_text(size=10, text="●", dx=0, dy=1, align="center")
-            .encode(
-                x='asOfDate',
-                y=alt.Y(stock_symbol, scale=alt.Scale(
-                domain=[subset[stock_symbol].min() * 0.9, subset[stock_symbol].max()*1.1])),
-                tooltip=['symbol', 'asOfDate', stock_symbol],  # ツールチップに表示する列を指定
-            )
-            .interactive()
-        )
-        self.charts.append(chart+annotation_layer)
+        # annotation_layer = (
+        #     alt.Chart(subset)
+        #     .mark_text(size=10, text="●", dx=0, dy=1, align="center")
+        #     .encode(
+        #         x='asOfDate',
+        #         y=alt.Y(stock_symbol, scale=alt.Scale(
+        #         domain=[subset[stock_symbol].min() * 0.9, subset[stock_symbol].max()*1.1])),
+        #         tooltip=['symbol', 'asOfDate', stock_symbol],  # ツールチップに表示する列を指定
+        #     )
+        #     .interactive()
+        # )
+        # self.charts.append(chart+annotation_layer)
+        self.charts.append(chart)
 
     def display_chart(self):
         st.altair_chart(alt.layer(*self.charts), use_container_width=True)
