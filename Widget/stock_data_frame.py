@@ -10,7 +10,7 @@ class StockDataFrame:
     def __init__(self, tickers_info):
 
         self.df = pd.DataFrame(
-            columns=['証券コード', '社名', '時価総額(千万)', '現在株価', '目標株価', 'PER', 'PBR', '配当利回', '借入率', 'A評価', 'is_widget']
+            columns=['証券コード', '社名', '時価総額(千万)', '現在株価', '目標株価', 'PER', 'PBR', 'ROE', '配当利回', '借入率', 'A評価', 'is_widget']
             )
 
         self.tickers_info = tickers_info
@@ -39,6 +39,11 @@ class StockDataFrame:
             except Exception as e:
                 print(e)
                 priceToBook = 'N/A'
+            try:
+                returnOnEquity = str(round(ticker.info.get('returnOnEquity', 'N/A')*100, 2)) + '%'
+            except Exception as e:
+                print(e)
+                returnOnEquity = 'N/A'
             try:
                 trailing_annual_dividend_yield = ticker.info.get(
                     'trailingAnnualDividendYield')
@@ -73,6 +78,7 @@ class StockDataFrame:
                     '目標株価': ticker.info.get('targetMeanPrice', 'N/A'),
                     'PER': trailingPE,
                     'PBR': priceToBook,
+                    'ROE': returnOnEquity,
                     '配当利回': dividend_payout_ratio,
                     '借入率': ticker.info.get('debtToEquity', 'N/A'),
                     'A評価': credit_ratio,
@@ -86,6 +92,7 @@ class StockDataFrame:
                     "目標株価": stock_data['目標株価'],
                     "PER": stock_data['PER'],
                     "PBR": stock_data['PBR'],
+                    "ROE": stock_data['ROE'],
                     "配当利回": stock_data['配当利回'],
                     "借入率": stock_data['借入率'],
                     "A評価": stock_data['A評価'],
