@@ -24,14 +24,18 @@ class YfinanceManager:
 
         st.subheader(':blue[セクター情報]')
         info_col1, info_col2 = st.columns(2)
-        with info_col1:
-            st.caption('industry')
-            st.write(self.info['industry'])
-        with info_col2:
-            st.caption('sector')
-            st.write(self.info['sector'])
+        try:
+            with info_col1:
+                st.caption('industry')
+                st.write(self.info['industry'])
+            with info_col2:
+                st.caption('sector')
+                st.write(self.info['sector'])
 
-        st.divider()
+            st.divider()
+        except Exception as e:
+            print("サイドバー")
+            print(e)
 
         # 株価情報を表示
         st.subheader(':blue[株価情報]')

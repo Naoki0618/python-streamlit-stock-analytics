@@ -119,25 +119,28 @@ if unselected_tickers:
     for unselected_ticker in unselected_tickers:
         st.session_state.tickers.remove(unselected_ticker)
 
-Cstock_df = StockDataFrame()
+# 複数選択状態に合わせて株式情報を取得 
+# Ctickers_data データフレームとチャートで使用する
+Ctickers_data = FinanceData(options_multiselect)
 
-# 新しい行を作成し、データフレームに追加する
-for sss in options_multiselect:
-    try:
-        Cstock_df.add_data(sss)
-    except Exception as e:
-        print(e)
-        st.error(sss + 'は何かしらの情報を取得できません', icon="🚨")
-
+# Cstock_df データフレーム専用インスタンス　Ctickers_dataを用いて作成
+Cstock_df = StockDataFrame(Ctickers_data.tickers_info)
 Cstock_df.display_dataframe()
+
 
 try:
 
     st.divider()
-    # info_col1, info_col2 = st.columns(2)
-    # with info_col1:
-    months = st.slider(':blue[月数]', 1, 100, 2)
-    # with info_col2:
+    info_col1, info_col2 = st.columns(2)
+    with info_col1:
+        months = st.slider(':blue[日数]', 1, 100, 2)
+    with info_col2:
+        ddd = st.radio(
+            "Select Period",
+            ('day', 'month', 'year')
+            , index=1
+            ,horizontal = True)
+
         # ymin, ymax = st.slider(':blue[株価範囲]', 0.0, 10000.0, (1000.0, 5000.0))
 
     # 株価のグラフを表示　##################################
@@ -148,9 +151,9 @@ try:
     tickers = [tickers[i] for i in range(len(tickers)) if is_widget[i]]
 
     # 初期データ
-    Ctickers_data = FinanceData(tickers)
-    tickers_close_value = Ctickers_data.get_data(months, "Close", 0)
-    tickers_volume_value = Ctickers_data.get_data(months, "Volume", 0)
+    # Ctickers_data = FinanceData(tickers)
+    tickers_close_value = Ctickers_data.get_data(months, "Close", 0, ddd)
+    tickers_volume_value = Ctickers_data.get_data(months, "Volume", 0, ddd)
     
     tickers_close_value = tickers_close_value.loc[tickers]
     tickers_volume_value = tickers_volume_value.loc[tickers]
@@ -222,7 +225,7 @@ try:
         st.subheader(":blue[営業利益]")
         charts_income.display_chart()
 
-    data_income = Ctickers_data.get_data(months, "Dividends", 1)
+    data_income = Ctickers_data.get_data(months, "Dividends", 1, ddd)
     data_income = Ctickers_data.remove_all_zero_col(data_income)
     st.write("### :blue[配当実績]", data_income.sort_index())
 

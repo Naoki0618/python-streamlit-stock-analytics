@@ -57,7 +57,7 @@ class FavoriteManager():
     def select_favorites(self, favorites):
         if favorites != None:
             favorite_names = list(favorites.keys())
-            selected_names = st.multiselect("Select Favorites", favorite_names, key="selected_names")
+            selected_names = st.multiselect("お気に入りリストを選択して下さい", favorite_names, key="selected_names")
             selected_codes = []
             for name in selected_names:
                 selected_codes.extend(favorites[name])

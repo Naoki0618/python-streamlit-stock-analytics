@@ -9,22 +9,27 @@ class FinanceData:
         self.tickers_info = []
         for company in self.tickers:
 
-            if company.isalpha():
-                tkr = yf.Ticker(company)
-            else:
-                tkr = yf.Ticker(company + ".T")
-            self.tickers_info.append(tkr)
+            try:
+                if company.isalpha():
+                    tkr = yf.Ticker(company)
+                else:
+                    tkr = yf.Ticker(company + ".T")
+                self.tickers_info.append(tkr)
+            except:
+                st.error(company + 'は何かしらの情報を取得できません', icon="🚨")
 
-    def get_data(self, months, column, flg):
+
+    def get_data(self, months, column, flg, ddd):
         df = pd.DataFrame()
         for tkr in self.tickers_info:
+            
+            if ddd == "day":
+                hist = tkr.history(period=f'{months}d')
+            elif ddd == "month":
+                hist = tkr.history(period=f'{months}mo')
+            else:
+                hist = tkr.history(period=f'{months}y')
 
-            # if company.isalpha():
-            #     tkr = yf.Ticker(company)
-            # else:
-            #     tkr = yf.Ticker(company + ".T")
-
-            hist = tkr.history(period=f'{months}mo')
             hist = hist[[column]]
             hist.columns = [tkr.ticker.replace(".T","")]
             hist = hist.T
