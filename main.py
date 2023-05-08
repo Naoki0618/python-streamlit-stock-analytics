@@ -32,7 +32,8 @@ def get_symbols():
 st.set_page_config(layout="wide")
 
 # ロケールを設定する（日本語を指定）
-locale.setlocale(locale.LC_NUMERIC, 'ja_JP')
+# locale.setlocale(locale.LC_NUMERIC, 'ja_JP')
+locale.setlocale(locale.LC_NUMERIC, '')
 
 ### data ###################################################################
 
