@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas as pd
 import streamlit as st
+from API.bs4_stock_data import BsStockData
 
 
 # 株式情報からデータフレームを作成する
@@ -10,7 +11,7 @@ class StockDataFrame:
     def __init__(self, tickers_info):
 
         self.df = pd.DataFrame(
-            columns=['証券コード', '社名', '時価総額(千万)', '現在株価', '目標株価', 'PER', 'PBR', 'ROE', '配当利回', '借入率', 'A評価', 'is_widget']
+            columns=['証券コード', '社名', '時価総額(千万)', '現在株価', '目標株価', 'PER', 'PBR', 'ROE', '配当利回', '借入率', 'A評価', '信用倍率', 'is_widget']
             )
 
         self.tickers_info = tickers_info
@@ -58,17 +59,22 @@ class StockDataFrame:
                 dividend_payout_ratio = 'N/A'
 
             try:    
-                credit_ratio = ticker.info.get("recommendationMean")
+                recommendationMean = ticker.info.get("recommendationMean")
             except Exception as e:
                 print(e)
-                credit_ratio = 'N/A'
+                recommendationMean = 'N/A'
 
             try:    
                 symbol = ticker.info.get('symbol', 'N/A').replace(".T", "")
             except Exception as e:
                 print(e)
                 symbol = 'N/A'
-
+            try:
+                credit_ratio = BsStockData.scrape_website(symbol)
+            except Exception as e:
+                print(e)
+                credit_ratio = 'N/A'
+                
             try:
                 stock_data = {
                     '証券コード': symbol,
@@ -81,7 +87,8 @@ class StockDataFrame:
                     'ROE': returnOnEquity,
                     '配当利回': dividend_payout_ratio,
                     '借入率': ticker.info.get('debtToEquity', 'N/A'),
-                    'A評価': credit_ratio,
+                    'A評価': recommendationMean,
+                    '信用倍率': credit_ratio,
                     'is_widget': True
                 }
                 new_row = pd.Series({
@@ -96,6 +103,7 @@ class StockDataFrame:
                     "配当利回": stock_data['配当利回'],
                     "借入率": stock_data['借入率'],
                     "A評価": stock_data['A評価'],
+                    "信用倍率": stock_data['信用倍率'],
                     'is_widget': True})
                 self.df = self.df.append(
                     new_row, ignore_index=True)

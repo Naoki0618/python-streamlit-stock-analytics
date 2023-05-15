@@ -22,8 +22,9 @@ class StockAltairChart:
                 y=alt.Y(f"{self.y}:Q", stack=None,
                         scale=alt.Scale(domain=[ymin, ymax])),
                 color=alt.Color(f"{self.color}:N", scale=alt.Scale(
-                    scheme='category10')) if self.color else None
-            )
+                    scheme='category10')) if self.color else None,
+                tooltip=['Date', self.data.columns[3], 'Name', 'Company'],  # ツールチップに表示する列を指定
+             )
             .configure_axis(
                 gridOpacity=0.8,
             )

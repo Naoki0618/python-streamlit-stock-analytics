@@ -39,7 +39,7 @@ class YahooQuery:
 
 
                 subset_v_t = subset_v.T
-                subset_v_t = subset_v_t.loc[subset_v_t['periodType'] == '3M'].copy()
+                # subset_v_t = subset_v_t.loc[subset_v_t['periodType'] == '3M'].copy()
                 subset_v_t['symbol'] = valuation_measures_t.columns[0].replace(".T","")  # 証券コードを列 'symbol' に追加
                 subsets.append(subset_v_t)
 
@@ -70,7 +70,7 @@ class YahooQuery:
                         'asOfDate', 'periodType', 'TotalRevenue']]
 
                 subset_v_t = subset_v.T
-                subset_v_t = subset_v_t.loc[subset_v_t['periodType'] == '12M'].copy()
+                # subset_v_t = subset_v_t.loc[subset_v_t['periodType'] == '12M'].copy()
                 subset_v_t['symbol'] = income_statement_t.columns[0].replace(".T","")  # 証券コードを列 'symbol' に追加
                 subsets.append(subset_v_t)
 
