@@ -15,7 +15,7 @@ yfinance、yahooqueryを利用し、株式の分析を行う。
 各種データは無料API/ライセンスフリーを利用して取得するため安心。
  
 # Requirement
-* requirements.txt参照
+requirements.txt参照
  
 # Author
 naoki0618
