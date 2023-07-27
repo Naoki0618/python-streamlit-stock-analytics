@@ -6,7 +6,7 @@ yfinance、yahooqueryを利用し、株式の分析を行う。
  
 # DEMO
  
-"hoge"の魅力が直感的に伝えわるデモ動画や図解を載せる
+![画像の説明](image.png "demo")
  
 # Features
 
