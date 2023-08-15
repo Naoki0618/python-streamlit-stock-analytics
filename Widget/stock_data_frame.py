@@ -11,7 +11,7 @@ class StockDataFrame:
     def __init__(self, tickers_info):
 
         self.df = pd.DataFrame(
-            columns=['証券コード', '社名', '時価総額(千万)', '現在株価', '目標株価', 'PER', 'PBR', 'ROE', '配当利回', '借入率', 'A評価', '信用倍率', 'is_widget']
+            columns=['証券コード', '社名', '時価総額(千万)', '現在株価', '目標株価', 'PER', 'PBR', 'ROE', '配当利回', '借入率', 'A評価', '信用倍率', '株価倍率', 'is_widget']
             )
 
         self.tickers_info = tickers_info
@@ -89,6 +89,7 @@ class StockDataFrame:
                     '借入率': ticker.info.get('debtToEquity', 'N/A'),
                     'A評価': recommendationMean,
                     '信用倍率': credit_ratio,
+                    '株価倍率': 1,
                     'is_widget': True
                 }
                 new_row = pd.Series({
@@ -104,6 +105,7 @@ class StockDataFrame:
                     "借入率": stock_data['借入率'],
                     "A評価": stock_data['A評価'],
                     "信用倍率": stock_data['信用倍率'],
+                    '株価倍率': 1,
                     'is_widget': True})
                 self.df = self.df.append(
                     new_row, ignore_index=True)

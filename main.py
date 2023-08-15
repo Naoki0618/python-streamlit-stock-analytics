@@ -146,15 +146,17 @@ try:
 
     # 株価のグラフを表示　##################################
     tickers = Cstock_df.get_info('証券コード')
+    magnifications = Cstock_df.get_info('株価倍率')
     is_widget = Cstock_df.get_info('is_widget')
 
     #　チェックボックスがONのものだけを抽出
     tickers = [tickers[i] for i in range(len(tickers)) if is_widget[i]]
+    magnifications = [magnifications[i] for i in range(len(magnifications)) if is_widget[i]]
 
     # 初期データ
     # Ctickers_data = FinanceData(tickers)
-    tickers_close_value = Ctickers_data.get_data(months, "Close", 0, ddd)
-    tickers_volume_value = Ctickers_data.get_data(months, "Volume", 0, ddd)
+    tickers_close_value = Ctickers_data.get_data(months, "Close", 0, ddd, magnifications)
+    tickers_volume_value = Ctickers_data.get_data(months, "Volume", 0, ddd , 1)
     
     tickers_close_value = tickers_close_value.loc[tickers]
     tickers_volume_value = tickers_volume_value.loc[tickers]

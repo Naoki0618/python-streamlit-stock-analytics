@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas as pd
 import streamlit as st
+import numpy as np
 
 
 class FinanceData:
@@ -20,9 +21,9 @@ class FinanceData:
                 st.error(company + 'は何かしらの情報を取得できません', icon="🚨")
 
 
-    def get_data(self, months, column, flg, ddd):
+    def get_data(self, months, column, flg, ddd, magnifications):
         df = pd.DataFrame()
-        for tkr in self.tickers_info:
+        for index, tkr in enumerate(self.tickers_info):
             
             if ddd == "day":
                 hist = tkr.history(period=f'{months}d')
@@ -37,6 +38,10 @@ class FinanceData:
             hist.index.name = 'Name'
             hist['Company'] = tkr.info['longName']  # 企業名をカラムに追加する
             hist = hist.set_index('Company', append=True)  # 企業名をインデックスに移動する
+
+            if 'Close' == column:
+                hist.values[0] = np.array(hist.values[0]) * magnifications[index]
+
             df = pd.concat([df, hist])
 
         if flg == 1:
