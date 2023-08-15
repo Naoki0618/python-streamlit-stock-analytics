@@ -77,6 +77,7 @@ with favorite:
     # 5. 結果を表示する
     st.write("Selected Securities:", selected_codes)
 
+
 ### Main ######################################################################
 options_multiselect = []
 if 'prev_tickers' not in st.session_state:

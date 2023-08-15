@@ -115,7 +115,7 @@ class StockDataFrame:
     # インスタンス情報をもとにデータフレームを表示
     def display_dataframe(self):
 
-        edited_df = st.experimental_data_editor(self.df)
+        edited_df = st.data_editor(self.df)
 
         # データエディターで編集された値を取得する
         edited_df_dict = edited_df.to_dict(orient='records')
@@ -127,7 +127,7 @@ class StockDataFrame:
     def all_false_widget(self):
         # edited_df = st.experimental_data_editor(self.df)
         
-        edited_df_dict = st.experimental_data_editor(self.df)
+        edited_df_dict = st.data_editor(self.df)
 
         # データエディターで編集された値を取得する
         # edited_df_dict['is_widget'] = False
