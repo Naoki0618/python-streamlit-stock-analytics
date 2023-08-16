@@ -32,6 +32,52 @@ def get_top10(soup, selector):
 
     return res_array
 
+def update_array(arr, company_code, company_name, fund):
+    """
+    配列内で会社情報を管理します。
+
+    Parameters:
+    arr (list): 銘柄コード、会社名、カウントが格納されるリスト
+    company_code (str): 追加する会社の銘柄コード
+    company_name (str): 追加する会社の会社名
+    """
+    found = False
+    for item in arr:
+        if item[0] == company_code and item[1] == company_name:
+            item[2] += 1  # カウントを増やす
+            item[3].append(fund)
+            found = True
+            break
+
+    if not found:
+        arr.append([company_code, company_name, 1, [fund]])  # 新しい要素として追加
+
+def get_html(url, selector, element):
+    """
+    指定したURLから要素を取得します。
+
+    Parameters:
+    url (str): 取得対象のURL
+    selector (str): 取得対象のセレクタ
+    element (str): 取得対象のエレメント
+
+    Returns:
+    list: 取得対象のエレメントのリスト
+    """
+    response = requests.get(url)
+    content = response.content
+
+    soup = BeautifulSoup(content, 'lxml')
+
+    res_selector = soup.select(selector)
+
+    if len(res_selector) == 0:
+        return None
+
+    elements = res_selector[0].find_all(element)
+
+    return elements
+
 # # スクレイピング対象のURL
 # url = "https://nikkeiyosoku.com/stock/twitter/"
 # selector = "body > div:nth-child(5) > div > div.col-sm-12.col-md-9 > div.section > div:nth-child(5) > table > tbody"
